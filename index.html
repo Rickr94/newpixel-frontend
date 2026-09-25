@@ -497,6 +497,7 @@ input[type=range]::-webkit-slider-thumb{box-shadow:0 0 10px var(--pk)}
   </div>
 </div></div>
 <div class="toast" id="toast"></div>
+<script>window.NP_API_BASE='https://api.newpixel.my.id';</script>
 <script>
 const $=id=>document.getElementById(id);
 const fmt=s=>{s=Math.max(0,s);const m=s/60|0,x=(s%60)|0;return String(m).padStart(2,'0')+':'+String(x).padStart(2,'0')};
@@ -869,10 +870,10 @@ $('accClose').onclick=()=>$('accModal').classList.remove('open');
 $('accModal').addEventListener('click',e=>{if(e.target===$('accModal'))$('accModal').classList.remove('open')});
 $('accShow').onclick=()=>{const k=$('accKey');const show=k.type==='password';k.type=show?'text':'password';$('accShow').textContent=show?'🙈':'👁'};
 $('accSave').onclick=()=>{const key=$('accKey').value.trim(),who=$('accWho').value,id=$('accId').value.trim(),me=$('accMe').value.trim(),api=$('accApi').value.trim(),tpl=$('accTpl').value;$('accErr').style.display='none';
- if(!key)return accErr('Isi API Key dulu.');
+ if(api&&!/^https?:\/\/.+/i.test(api))return accErr('Backend URL harus https://… atau kosongkan.');
+ if(!key){const c0=rbxCfg();rbxSave({...c0,api,tpl});renderAccStat();toast('Backend tersimpan (lokal). Key bisa diisi nanti.');return}
  if(!/^\d+$/.test(id))return accErr('ID kreator harus angka.');
  if(who==='groupId'&&me&&!/^\d+$/.test(me))return accErr('"User ID saya" harus angka bila diisi.');
- if(api&&!/^https?:\/\/.+/i.test(api))return accErr('Backend URL harus https://… atau kosongkan.');
  const c0=rbxCfg();rbxSave({...c0,key,who,id,me,api,tpl});renderAccStat();toast('Akun Info tersimpan (lokal).')};
 $('accWipe').onclick=()=>{const c0=rbxCfg();delete c0.key;rbxSave(c0);$('accKey').value='';renderAccStat();toast('API key dihapus dari browser ini.')};
 $('btnRbx').onclick=()=>{const c=rbxCfg();$('rbxName').value=($('expName').value||'newpixel_mix').slice(0,50);$('rbxDesc').value=c.desc||'Dibuat dengan NewPixel Audio Editor';if(c.shareType)$('rbxShareType').value=c.shareType;if(c.shareId)$('rbxShareId').value=c.shareId;renderRbxAcc();renderHist();$('rbxErr').style.display='none';$('rbxStat').style.display='none';$('rbxModal').classList.add('open')};
