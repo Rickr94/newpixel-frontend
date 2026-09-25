@@ -454,11 +454,11 @@ input[type=range]::-webkit-slider-thumb{box-shadow:0 0 10px var(--pk)}
   <div class="modal-row">
     <input type="text" id="accMe" placeholder="User ID saya (wajib bila upload atas nama grup)" style="flex:1;margin:0"/>
   </div>
-  <div class="listhead" style="margin-top:12px"><span>BACKEND ONLINE (OPSIONAL)</span></div>
-  <div class="modal-row" style="margin-top:0">
-    <input type="text" id="accApi" placeholder="https://api.domainkamu.id — kosongkan = localhost:8765" style="flex:1;margin:0"/>
+  <div class="listhead" id="apiRowH" style="margin-top:12px;display:none"><span>BACKEND ONLINE (OPSIONAL)</span></div>
+  <div class="modal-row" id="apiRow" style="margin-top:0;display:none">
+    <input type="text" id="accApi" placeholder="https://api.domainkamu.id — kosongkan = otomatis" style="flex:1;margin:0"/>
   </div>
-  <p class="mini-note">Isi ini setelah VPS jadi. Pengunjung cukup buka web — tidak perlu jalankan proxy lagi.</p>
+  <p class="mini-note" id="apiNote" style="display:none">Otomatis ke server online — tidak perlu diisi / tidak perlu jalankan proxy lagi.</p>
   <div class="listhead" style="margin-top:12px"><span>TEMPLATE SCRIPT MUSIC PLAYER</span></div>
   <div class="modal-row" style="margin-top:0">
     <textarea id="accTpl" rows="9" spellcheck="false" style="width:100%;background:rgba(12,12,12,.85);border:1px solid var(--line);color:#fff;border-radius:10px;padding:.6rem .8rem;font-family:Consolas,monospace;font-size:.76rem;outline:none;resize:vertical"></textarea>
