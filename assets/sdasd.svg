@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <rect width="512" height="512" rx="64" fill="#020408"/>
+  <!-- pixel dissolve top -->
+  <g fill="#e8e8e8">
+    <rect x="150" y="110" width="16" height="16" opacity="0.5"/>
+    <rect x="178" y="128" width="14" height="14" opacity="0.6"/>
+    <rect x="200" y="118" width="10" height="10" opacity="0.5"/>
+    <rect x="228" y="138" width="20" height="20" fill="#fff"/>
+    <rect x="256" y="142" width="18" height="18" fill="#cfd6dd"/>
+    <rect x="192" y="158" width="18" height="18" fill="#fff"/>
+    <rect x="282" y="162" width="14" height="14" fill="#fff"/>
+  </g>
+  <!-- N -->
+  <path d="M132 178 L132 352 L172 388 L172 258 L268 352 L292 328 L292 300 L172 180 Z" fill="url(#npGrad)"/>
+  <!-- slash -->
+  <path d="M198 178 L268 248 L268 308 L238 278 L188 208 Z" fill="#f2f5f7"/>
+  <!-- P -->
+  <path d="M286 178 L388 178 L424 214 L424 288 L388 324 L336 324 L336 288 L376 288 L388 276 L388 230 L376 218 L336 218 L336 352 L306 322 Z" fill="#ffffff"/>
+  <!-- pixel dissolve bottom -->
+  <g fill="#ffffff">
+    <rect x="306" y="336" width="16" height="16"/>
+    <rect x="288" y="358" width="16" height="16"/>
+    <rect x="314" y="362" width="16" height="16"/>
+    <rect x="296" y="384" width="12" height="12"/>
+    <rect x="322" y="388" width="12" height="12"/>
+    <rect x="304" y="408" width="12" height="12"/>
+    <rect x="332" y="410" width="12" height="12"/>
+  </g>
+  <text x="256" y="458" text-anchor="middle" font-family="Arial, sans-serif" font-size="30" letter-spacing="10" fill="#ffffff" font-weight="700">NEWPIXEL</text>
+  <defs>
+    <linearGradient id="npGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#8a939c"/>
+    </linearGradient>
+  </defs>
+</svg>
