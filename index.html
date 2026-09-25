@@ -302,7 +302,8 @@ input[type=range]::-webkit-slider-thumb{box-shadow:0 0 10px var(--pk)}
   <div class="jxnav"><a href="#" id="navHome">Beranda</a><a href="#panelStudio" class="on">Studio</a><a href="#panelMix">Mixer</a><a href="#panelHist">Riwayat</a><a href="#panelExport">Export</a></div>
   <div class="sp"></div>
   <div class="eq"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
-  <button class="linkbtn" id="btnAccount" style="font-family:JOOX,Inter,sans-serif;cursor:pointer"><i class="fa-solid fa-user-gear"></i> Akun Info</button>
+  <button class="linkbtn" id="btnQuota" style="font-family:JOOX,Inter,sans-serif;cursor:pointer" title="Sisa kuota gratis / lisensi"><i class="fa-solid fa-bolt"></i> <span id="quotaPill">Kuota…</span></button>
+  <button class="linkbtn" id="btnAccount" style="font-family:JOOX,Inter,sans-serif;cursor:pointer"><i class="fa-solid fa-user-gear"></i> Roblox Config</button>
 </div>
 <div class="layout">
   <!-- LEFT -->
@@ -409,6 +410,11 @@ input[type=range]::-webkit-slider-thumb{box-shadow:0 0 10px var(--pk)}
   <p>Hasil mix di-render jadi <b style="color:#fff">MP3 128kbps</b> lalu dikirim ke Creator Dashboard via API resmi — tanpa download manual. Butuh sekali setup:</p>
   <p style="margin-top:6px">Setup sekali di tombol <b style="color:#fff">Akun Info</b> (API key + User ID), jalankan <b style="color:#fff">roblox-proxy.bat</b> dan biarkan window-nya terbuka, lalu RENDER & UPLOAD.</p>
   <div class="flow" id="rbxAcc" style="margin-top:10px"></div>
+  <div class="flow" id="licStatRbxMini" style="display:none"></div>
+  <div class="modal-row">
+    <button class="tbtn" id="btnQuotaFromRbx" title="Lihat sisa kuota / isi lisensi">KUOTA / LISENSI</button>
+    <span style="flex:1"></span>
+  </div>
   <div class="modal-row">
     <input type="text" id="rbxName" placeholder="Nama asset (display name)" style="flex:1;margin:0"/>
   </div>
@@ -441,7 +447,7 @@ input[type=range]::-webkit-slider-thumb{box-shadow:0 0 10px var(--pk)}
   </div>
 </div></div>
 <div class="modal-ov" id="accModal"><div class="modal">
-  <h3>AKUN INFO — ROBLOX</h3>
+  <h3>ROBLOX CONFIG</h3>
   <p>API key + identitas kreator, tersimpan <b style="color:#fff">hanya di browser ini</b>. Key selalu tampil tertutup — jangan pernah bagikan screenshot atau isi key ke siapa pun.</p>
   <div class="modal-row">
     <input type="password" id="accKey" placeholder="API Key Roblox" style="flex:1;margin:0"/>
@@ -477,8 +483,14 @@ input[type=range]::-webkit-slider-thumb{box-shadow:0 0 10px var(--pk)}
 <div class="modal-ov" id="ytModal"><div class="modal">
   <h3>AMBIL DARI LINK</h3>
   <p>Tempel link YouTube (watch / shorts / youtu.be), SoundCloud, TikTok, Vimeo, Bandcamp, Mixcloud, atau file MP3/WAV/OGG langsung (maks 10 menit) — audio langsung masuk timeline. Hanya untuk konten milikmu / bebas lisensi.</p>
+  <p class="mini-note">Gratis 10x/hari (gabungan Ambil Link + Upload Roblox + Export). Lisensi 20rb = 50x (open ticket di Discord, tanpa daftar).</p>
   <div class="modal-row">
     <input type="text" id="ytUrl" placeholder="https://… (youtube / soundcloud / mp3 langsung)" style="flex:1;margin:0"/>
+  </div>
+  <div class="flow" id="licStatMini" style="display:none"></div>
+  <div class="modal-row">
+    <button class="tbtn" id="btnQuotaFromYt" title="Lihat sisa kuota / isi lisensi">KUOTA / LISENSI</button>
+    <span style="flex:1"></span>
   </div>
   <div class="errbox" id="ytErr"></div>
   <div class="flow" id="ytStat" style="display:none"></div>
@@ -487,6 +499,20 @@ input[type=range]::-webkit-slider-thumb{box-shadow:0 0 10px var(--pk)}
     <span style="flex:1"></span>
     <button class="tbtn" id="ytClose">TUTUP</button>
   </div>
+</div></div>
+<div class="modal-ov" id="quotaModal"><div class="modal">
+  <h3>KUOTA & LISENSI</h3>
+  <p>Gratis <b style="color:#fff">10x/hari</b> gabungan Ambil Link + Upload Roblox + Export (per IP). 1 kode lisensi membuka semua fitur — <b style="color:#fff">20rb = 50x</b>. Habis? Beli lagi (kode baru) atau top-up kode lama via ticket Discord.</p>
+  <div class="flow" id="quotaStat" style="display:block">Memuat…</div>
+  <div class="modal-row">
+    <input type="text" id="licKeyMain" placeholder="Tempel kode lisensi di sini" style="flex:1;margin:0"/>
+  </div>
+  <div class="modal-row">
+    <button class="ebtn" id="licSaveMain"><i class="fa-solid fa-key"></i> SIMPAN & CEK</button>
+    <span style="flex:1"></span>
+    <button class="tbtn" id="quotaClose">TUTUP</button>
+  </div>
+  <p class="mini-note">Beli: <a href="https://discord.gg/vZRBnUSN95" target="_blank" rel="noopener">open ticket di Discord</a> → terima kode → tempel di sini → langsung aktif 50x.</p>
 </div></div>
 <div class="modal-ov" id="cfModal"><div class="modal" style="width:min(380px,100%);text-align:center">
   <h3>KONFIRMASI</h3>
@@ -558,7 +584,20 @@ dz.addEventListener('drop',e=>{const fs=[...(e.dataTransfer.files||[])];if(fs.le
 /* ---------- ambil dari link (YouTube / SoundCloud / platform lain via proxy + yt-dlp) ---------- */
 function ytErr(m){const e=$('ytErr');e.textContent=m;e.style.display='block'}
 function ytStat(m){const s=$('ytStat');s.style.display='block';s.innerHTML=m}
-$('btnYT').onclick=()=>{$('ytErr').style.display='none';$('ytStat').style.display='none';$('ytModal').classList.add('open');setTimeout(()=>$('ytUrl').focus(),50)};
+function getLic(){try{return String(localStorage.getItem('np_lic')||'').trim().toUpperCase()}catch(e){return ''}}
+function setLic(v){v=String(v||'').trim().toUpperCase();try{if(v)localStorage.setItem('np_lic',v);else localStorage.removeItem('np_lic')}catch(e){}return v}
+function openQuota(){$('quotaModal').classList.add('open');refreshQuota();setTimeout(()=>$('licKeyMain').focus(),80)}
+function closeQuota(){$('quotaModal').classList.remove('open')}
+async function quotaInfo(){const lic=getLic();try{const r=await fetch(apiUrl('/key/check?key='+encodeURIComponent(lic)));return await r.json()}catch(e){return null}}
+async function refreshQuota(){const lic=getLic();if($('licKeyMain')&&document.activeElement!==$('licKeyMain'))$('licKeyMain').value=lic;const j=await quotaInfo();const txt=j?(j.ok?('Lisensi aktif: sisa <b style="color:#fff">'+j.remaining+'x</b> dari '+j.quota+'x. 1 kode untuk semua fitur.'):(lic?('Kode tidak dikenal — gratis sisa <b style="color:#fff">'+j.freeRemaining+'x</b> hari ini.'):('Gratis sisa <b style="color:#fff">'+j.freeRemaining+'x</b>/10 hari ini. Isi lisensi 20rb=50x untuk lanjut tanpa batas harian.'))):'Tidak bisa cek kuota (backend offline?).';$('quotaStat').innerHTML=txt;$('quotaStat').style.display='block';const pill=j?(j.ok?('Lisensi '+j.remaining+'x'):('Gratis '+j.freeRemaining+'x')):'Kuota?';if($('quotaPill'))$('quotaPill').textContent=pill;const mini=j?(j.ok?('Lisensi: sisa '+j.remaining+'x.'):('Gratis sisa '+j.freeRemaining+'x/10 hari ini.')):'Kuota?';[['licStatMini'],['licStatRbxMini']].forEach(([id])=>{const el=$(id);if(el){el.innerHTML=mini+' <b>KUOTA / LISENSI</b> untuk detail.';el.style.display='block'}});return j}
+$('btnQuota').onclick=openQuota;
+$('quotaClose').onclick=closeQuota;
+$('quotaModal').addEventListener('click',e=>{if(e.target===$('quotaModal'))closeQuota()});
+$('licSaveMain').onclick=async()=>{setLic($('licKeyMain').value);await refreshQuota();toast('Lisensi disimpan.')};
+$('licKeyMain').addEventListener('keydown',e=>{if(e.key==='Enter')$('licSaveMain').click()});
+$('btnQuotaFromYt').onclick=openQuota;
+$('btnQuotaFromRbx').onclick=openQuota;
+$('btnYT').onclick=()=>{$('ytErr').style.display='none';$('ytStat').style.display='none';$('ytModal').classList.add('open');refreshQuota();setTimeout(()=>$('ytUrl').focus(),50)};
 $('ytClose').onclick=()=>$('ytModal').classList.remove('open');
 $('ytModal').addEventListener('click',e=>{if(e.target===$('ytModal'))$('ytModal').classList.remove('open')});
 $('ytUrl').addEventListener('keydown',e=>{if(e.key==='Enter')$('ytGo').click()});
@@ -566,20 +605,22 @@ $('ytGo').onclick=async()=>{
  const u=$('ytUrl').value.trim();$('ytErr').style.display='none';$('ytStat').style.display='none';
  if(!/^https:\/\//i.test(u))return ytErr('Tempel link lengkap (https://…).');
  if(!/(youtube\.com|youtu\.be|soundcloud\.com|bandcamp\.com|vimeo\.com|tiktok\.com|facebook\.com|fb\.watch|instagram\.com|twitter\.com|x\.com|twitch\.tv|mixcloud\.com|audiomack\.com|audius\.co|hearthis\.at|dailymotion\.com|\.(mp3|wav|ogg|m4a|flac|opus|webm)(\?.*)?$)/i.test(u))return ytErr('Platform belum didukung. Pakai YouTube / SoundCloud / TikTok / Vimeo / Bandcamp / Mixcloud / file MP3 langsung.');
- $('ytGo').disabled=true;ytStat('Mengekstrak audio… bisa 30–120 detik. Jangan tutup modal.');
- try{
+  $('ytGo').disabled=true;ytStat('Mengekstrak audio… bisa 30–120 detik. Jangan tutup modal.');
+  try{
+  const lic=getLic();
   let r,j=null,firstErr=null;
   const eps=[apiUrl('/audio'),apiUrl('/youtube')];
   for(const ep of eps){
-   try{r=await fetch(ep,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:u})})}catch(e){throw new Error('PROXY_DOWN')}
+   try{r=await fetch(ep,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:u,lic})})}catch(e){throw new Error('PROXY_DOWN')}
    let cur=null;try{cur=await r.json()}catch(e){firstErr=firstErr||'proxy menjawab non-JSON';continue}
    if(cur&&!cur.error&&cur.audioBase64){j=cur;break}
-   if(cur&&(cur.error==='NO_YTDLP'||cur.error==='BAD_URL'||cur.error==='TOOLONG'||cur.error==='TOOBIG')){j=cur;break}
+   if(cur&&(cur.error==='NO_YTDLP'||cur.error==='BAD_URL'||cur.error==='TOOLONG'||cur.error==='TOOBIG'||cur.error==='NEED_KEY')){j=cur;break}
    if(!firstErr)firstErr=cur;
    if(!j)j=cur;
    continue;
   }
   if(!j)throw new Error('YTFAIL '+firstErr);
+  if(j.error==='NEED_KEY')throw new Error('NEEDKEY');
   if(j.error==='UNSUPPORTED')throw new Error('UNSUPPORTED');
   if(j.error==='NO_YTDLP')throw new Error('NO_YTDLP');
   if(j.error==='BAD_URL')throw new Error('BADURL');
@@ -590,14 +631,16 @@ $('ytGo').onclick=async()=>{
   let buf;try{buf=await AC.decodeAudioData(ab.buffer)}catch(e){throw new Error('DECODE')}
   await bufferToClip(buf,(j.title||'audio-link').slice(0,48),playhead);
   const en=$('expName');if(en&&(en.value.trim()===''||en.value.trim()==='newpixel_mix'))en.value=(j.title||'audio-link').slice(0,60);
+  if(j.keyMode)refreshQuota();
   $('ytModal').classList.remove('open');toast('Audio masuk timeline.');
  }catch(e){const m=String((e&&e.message)||e);
-  if(m==='PROXY_DOWN')ytErr('Butuh proxy: jalankan roblox-proxy.bat (atau START-NEWPIXEL.bat) dulu, lalu coba lagi. Proxy lama? Restart proxy-nya agar dapat endpoint /audio.');
+  if(m==='PROXY_DOWN')ytErr('Server sibuk/offline. Coba lagi 1 menit.');
   else if(m==='NO_YTDLP')ytErr('yt-dlp.exe tidak ketemu di folder ini.');
   else if(m==='BADURL')ytErr('Link tidak valid. Pakai https:// lengkap, tanpa spasi/quotes.');
   else if(m==='UNSUPPORTED')ytErr('Platform belum didukung. Pakai YouTube / SoundCloud / TikTok / Vimeo / Bandcamp / Mixcloud / file MP3 langsung.');
   else if(m==='TOOLONG')ytErr('Durasi > 10 menit ditolak. Pakai klip yang lebih pendek.');
   else if(m==='BIG')ytErr('Hasil > 30 MB — pakai audio yang lebih pendek.');
+  else if(m==='NEEDKEY'){ytErr('Jatah gratis hari ini habis (10x). Masukkan kode lisensi (20rb=50x) untuk lanjut — open ticket di Discord.');openQuota();}
   else if(m==='DECODE')ytErr('Format tak didukung browser.');
   else {ytErr('Gagal ekstrak ('+m.slice(0,160)+'). Mungkin private/dihapus/butuh login — hanya untuk konten milikmu/bebas lisensi.');ytStat('Detail teknis (kirim ini bila masih gagal):<br/><code style="word-break:break-all">'+m.replace(/</g,'&lt;')+'</code>')}}
  $('ytGo').disabled=false};
@@ -718,7 +761,9 @@ function bufToWav(b){const n=b.numberOfChannels,len=b.length*n*2,ab=new ArrayBuf
 function dl(url,nm){const a=document.createElement('a');a.href=url;a.download=nm;a.click();setTimeout(()=>URL.revokeObjectURL(url),5000)}
 async function mixdown(){if(!clips.length){toast('Timeline kosong.');return null}ctx();const sr=44100,L=projectLen(),off=new OfflineAudioContext(2,sr*L|0,sr);const bs=off.createBiquadFilter();bs.type='lowshelf';bs.frequency.value=180;bs.gain.value=+$('cBass').value;const ts=off.createBiquadFilter();ts.type='highshelf';ts.frequency.value=3400;ts.gain.value=+$('cTreble').value;const m=off.createGain();bs.connect(ts);ts.connect(m);m.connect(off.destination);
  clips.forEach(c=>{const buf=buffers[c.id];if(!buf)return;const s=off.createBufferSource();s.buffer=buf;s.playbackRate.value=c.speed;const g=off.createGain();g.gain.value=c.vol;s.connect(g);g.connect(bs);const offs=Math.min(c.off,buf.duration-.05);const dur=Math.min(c.dur,buf.duration-offs);try{s.start(c.start,offs,Math.max(.05,dur/c.speed))}catch(e){}});toast('Merender mix…');return await off.startRendering()}
-async function doExport(kind){const name=($('expName').value||'newpixel_mix').replace(/[^\w\-]+/g,'_');const rb=await mixdown();if(!rb)return;
+async function doExport(kind){const name=($('expName').value||'newpixel_mix').replace(/[^\w\-]+/g,'_');
+ try{const qr=await fetch(apiUrl('/export/use'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({lic:getLic()})});const qj=await qr.json();if(!qj.ok&&qj.error==='NEED_KEY'){toast('Jatah gratis habis (10x/hari). Masukkan lisensi di panel Kuota.');openQuota();return}if(qj.remaining!=null)toast('Kuota terpakai ('+qj.mode+'). Sisa: '+qj.remaining+'x.');}catch(e){if(e&&e.message==='NEEDKEY')return;/* backend offline? lanjut lokal */}
+ const rb=await mixdown();if(!rb)return;
  try{
   if(kind==='wav'){const url=URL.createObjectURL(bufToWav(rb));$('fnameTxt').textContent=name+'.wav';dl(url,name+'.wav');toast('WAV backup selesai.')}
   else if(kind==='mp3'){toast('Encode MP3 192kbps…');const b=encodeMp3(rb,192);$('fnameTxt').textContent=name+'.mp3';dl(URL.createObjectURL(b),name+'.mp3');toast('MP3 selesai ('+(b.size/1048576).toFixed(1)+' MB).')}
@@ -876,7 +921,7 @@ $('accSave').onclick=()=>{const key=$('accKey').value.trim(),who=$('accWho').val
  if(who==='groupId'&&me&&!/^\d+$/.test(me))return accErr('"User ID saya" harus angka bila diisi.');
  const c0=rbxCfg();rbxSave({...c0,key,who,id,me,api,tpl});renderAccStat();toast('Akun Info tersimpan (lokal).')};
 $('accWipe').onclick=()=>{const c0=rbxCfg();delete c0.key;rbxSave(c0);$('accKey').value='';renderAccStat();toast('API key dihapus dari browser ini.')};
-$('btnRbx').onclick=()=>{const c=rbxCfg();$('rbxName').value=($('expName').value||'newpixel_mix').slice(0,50);$('rbxDesc').value=c.desc||'Dibuat dengan NewPixel Audio Editor';if(c.shareType)$('rbxShareType').value=c.shareType;if(c.shareId)$('rbxShareId').value=c.shareId;renderRbxAcc();renderHist();$('rbxErr').style.display='none';$('rbxStat').style.display='none';$('rbxModal').classList.add('open')};
+$('btnRbx').onclick=()=>{const c=rbxCfg();$('rbxName').value=($('expName').value||'newpixel_mix').slice(0,50);$('rbxDesc').value=c.desc||'Dibuat dengan NewPixel Audio Editor';if(c.shareType)$('rbxShareType').value=c.shareType;if(c.shareId)$('rbxShareId').value=c.shareId;renderRbxAcc();renderHist();refreshQuota();$('rbxErr').style.display='none';$('rbxStat').style.display='none';$('rbxModal').classList.add('open')};
 $('rbxClose').onclick=()=>$('rbxModal').classList.remove('open');
 $('rbxModal').addEventListener('click',e=>{if(e.target===$('rbxModal'))$('rbxModal').classList.remove('open')});
 function encodeMp3(buf,kbps){const sr=buf.sampleRate,n=buf.numberOfChannels;if(typeof lamejs==='undefined')throw new Error('NO_LAME');const enc=new lamejs.Mp3Encoder(n,sr,kbps||128);const L=buf.getChannelData(0),R=n>1?buf.getChannelData(1):L;const bs=1152,out=[];const f2i=(f,len)=>{const a=new Int16Array(len);for(let i=0;i<len;i++){const s=Math.max(-1,Math.min(1,f[i]));a[i]=s<0?s*32768:s*32767}return a};
@@ -886,14 +931,15 @@ async function proxyPing(){try{const c=new AbortController();const t=setTimeout(
 async function blobToB64(blob){return new Promise((res,rej)=>{const fr=new FileReader();fr.onload=()=>res(String(fr.result).split(',')[1]);fr.onerror=rej;fr.readAsDataURL(blob)})}
 let rbxViaProxy=false;
 async function uploadDirect(blob,meta,fn,key){const fd=new FormData();fd.append('request',JSON.stringify(meta));fd.append('fileContent',blob,fn);let res;try{res=await fetch('https://apis.roblox.com/assets/v1/assets',{method:'POST',headers:{'x-api-key':key},body:fd})}catch(e){throw new Error('CORS')}if(!res.ok){let t='';try{t=await res.text()}catch(e){}throw new Error('HTTP '+res.status+' '+t.slice(0,180))}const op=await res.json();return (op.path||'').split('/').pop()}
-async function uploadProxy(blob,meta,fn,key){rbxViaProxy=true;const b64=await blobToB64(blob);let r;try{r=await fetch(apiUrl('/upload'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key,request:JSON.stringify(meta),filename:fn,mime:'audio/mpeg',audioBase64:b64})})}catch(e){throw new Error('PROXY_DOWN')}const j=await r.json();if(j.status<200||j.status>=300)throw new Error('HTTP '+j.status+' '+(j.body||'').slice(0,180));let op=null;try{op=JSON.parse(j.body)}catch(e){throw new Error('OP')}return (op.path||'').split('/').pop()}
+async function uploadProxy(blob,meta,fn,key){rbxViaProxy=true;const b64=await blobToB64(blob);let r;try{r=await fetch(apiUrl('/upload'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key,request:JSON.stringify(meta),filename:fn,mime:'audio/mpeg',audioBase64:b64,lic:getLic()})})}catch(e){throw new Error('PROXY_DOWN')}const j=await r.json();if(j.error==='NEED_KEY')throw new Error('NEEDKEY');if(j.status<200||j.status>=300)throw new Error('HTTP '+j.status+' '+(j.body||'').slice(0,180));let op=null;try{op=JSON.parse(j.body)}catch(e){throw new Error('OP')}return (op.path||'').split('/').pop()}
 async function statusCheck(opId,key){if(rbxViaProxy){const s=await fetch(apiUrl('/status'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key,op:opId})});const j=await s.json();if(j.status!==200)throw new Error('HTTP '+j.status+' saat cek status.');return JSON.parse(j.body)}let st;try{st=await fetch('https://apis.roblox.com/assets/v1/operations/'+opId,{headers:{'x-api-key':key}})}catch(e){throw new Error('CORS')}if(!st.ok)throw new Error('HTTP '+st.status+' saat cek status.');return await st.json()}
 $('rbxGo').onclick=async()=>{const c0=rbxCfg(),key=(c0.key||'').trim(),who=c0.who||'userId',id=String(c0.id||'').trim(),name=($('rbxName').value.trim()||'newpixel_mix').slice(0,50),desc=($('rbxDesc').value.trim()||'Dibuat dengan NewPixel Audio Editor').slice(0,200);
  $('rbxErr').style.display='none';
  if(!key||!/^\d+$/.test(id)){rbxShowErr('Akun belum lengkap — atur dulu di Akun Info.');$('rbxModal').classList.remove('open');openAcc();return}
  if(!clips.length)return rbxShowErr('Timeline masih kosong — tambah audio dulu.');
- rbxSave({...c0,desc,shareType:$('rbxShareType').value,shareId:$('rbxShareId').value.trim()});$('rbxGo').disabled=true;rbxViaProxy=false;
- try{
+  rbxSave({...c0,desc,shareType:$('rbxShareType').value,shareId:$('rbxShareId').value.trim()});$('rbxGo').disabled=true;rbxViaProxy=false;
+  try{
+  try{const qc=await fetch(apiUrl('/key/check?key='+encodeURIComponent(getLic())));const qj=await qc.json();if(!qj.ok&&qj.freeRemaining<=0)throw new Error('NEEDKEY')}catch(e){if(e&&e.message==='NEEDKEY')throw e}
   rbxStat('1/3 — Merender mix…');const rb=await mixdown();if(!rb)throw new Error('RENDER');
   const dur=rb.duration;if(dur>=420)throw new Error('DUR');
   rbxStat('2/3 — Encode MP3 128kbps…');let blob;try{blob=encodeMp3(rb)}catch(e){if(e&&e.message==='NO_LAME')throw new Error('NO_LAME');throw e}
@@ -937,7 +983,8 @@ $('rbxGo').onclick=async()=>{const c0=rbxCfg(),key=(c0.key||'').trim(),who=c0.wh
   if(m==='DUR')rbxShowErr('Durasi mix '+fmt(projectLen())+' melebihi batas Roblox (maks < 7 menit). Pendekkan timeline dulu.');
   else if(m==='SIZE')rbxShowErr('Hasil MP3 ≥ 20 MB (batas Roblox). Pendekkan durasi atau kecilkan jumlah clip.');
   else if(m==='NO_LAME')rbxShowErr('Library MP3 (lamejs CDN) gagal dimuat — butuh internet sekali saat buka halaman. Refresh lalu ulangi.');
-  else if(m==='NO_PROXY')rbxShowErr('Butuh proxy lokal: double-klik roblox-proxy.bat di folder ini, biarkan window hitamnya terbuka, lalu tekan RENDER & UPLOAD lagi. Web akan lewat proxy otomatis.');
+  else if(m==='NO_PROXY')rbxShowErr('Butuh koneksi server: pastikan backend online (https://api.newpixel.my.id) terjangkau.');
+  else if(m==='NEEDKEY'){rbxShowErr('Jatah gratis habis (10x/hari). Masukkan kode lisensi (20rb=50x) di kolom lisensi untuk lanjut upload.');openQuota();}
   else if(m==='PROXY_DOWN')rbxShowErr('Proxy tidak merespons. Pastikan roblox-proxy.bat sedang jalan (window hitam terbuka, tulisan proxy jalan).');
   else if(m==='CORS')rbxShowErr('Browser diblokir Roblox (CORS) dan proxy tak aktif. Jalankan roblox-proxy.bat lalu ulangi — atau fallback WAV BACKUP + upload manual.');
   else if(m==='TIMEOUT')rbxShowErr('Moderasi lebih dari 5 menit — cek manual di Creator Dashboard → Creations → Audio.');
@@ -946,7 +993,7 @@ $('rbxGo').onclick=async()=>{const c0=rbxCfg(),key=(c0.key||'').trim(),who=c0.wh
   else rbxShowErr('Gagal: '+m.slice(0,250))}
  $('rbxGo').disabled=false};
 addEventListener('resize',()=>draw());
-ctx();applyMaster();refresh();renderHist();recoverPending().then(()=>processGrants());
+ctx();applyMaster();refresh();refreshQuota();renderHist();recoverPending().then(()=>processGrants());
 /* ---------- loading screen ---------- */
 (function(){const bar=$('ldBar'),pct=$('ldPct'),sub=$('ldSub'),msgs=['Memuat engine audio…','Menyiapkan timeline…','Memuat library export…','Menyiapkan riwayat…','Hampir siap…'];let p=0,mi=0,done=false;
  function paint(){bar.style.width=p+'%';pct.textContent=p+'%'}
