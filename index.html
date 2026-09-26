@@ -468,7 +468,7 @@ input[type=range]::-webkit-slider-thumb{box-shadow:0 0 10px var(--pk)}
   <div class="modal-row" style="margin-top:0">
     <textarea id="accTpl" rows="9" spellcheck="false" style="width:100%;background:rgba(12,12,12,.85);border:1px solid var(--line);color:#fff;border-radius:10px;padding:.6rem .8rem;font-family:Consolas,monospace;font-size:.76rem;outline:none;resize:vertical"></textarea>
   </div>
-  <p class="mini-note">Baris id, title, artist, dan speed terisi otomatis (speed = kompensasi 1/speed clip biar terdengar normal di Roblox). Baris lain (image, genre, icon) mengikuti template ini.</p>
+  <p class="mini-note">Baris id, title, artist, speed, dan dur terisi otomatis (dur = panjang file asli sebelum edit, detik). Baris lain (image, genre, icon) mengikuti template ini.</p>
   <div class="flow" id="accStat" style="display:none"></div>
   <div class="errbox" id="accErr"></div>
   <p class="mini-note">Cara dapat key: create.roblox.com → API Keys → scope asset:read + asset:write (+ asset-permissions:write bila mau auto bagi-akses), tanpa batasan IP. User ID = angka di URL profilmu.</p>
@@ -747,10 +747,10 @@ function renderStudioHist(){const box=$('stHist');if(!box)return;const h=rbxHist
  box.innerHTML='';if(!h.length){box.innerHTML='<div class="empty">Belum ada upload. Hasil upload Roblox akan muncul di sini.</div>';return}
  h.forEach(x=>{const d=document.createElement('div');d.className='histrow';const b=document.createElement('b');b.textContent=x.name+' • '+x.aid;const s=document.createElement('span');s.textContent=(function(){const _mi=modInfo(x.mod);s.className=_mi.c;return _mi.t+(x.share?' • '+x.share:'')})();const bId=document.createElement('button');bId.className='tbtn';bId.style.padding='.3rem .55rem';bId.textContent='SALIN ID';bId.onclick=()=>copyTxt(String(x.aid));const bNm=document.createElement('button');bNm.className='tbtn';bNm.style.padding='.3rem .55rem';bNm.textContent='SALIN NAMA';bNm.onclick=()=>copyTxt(x.name||'');function luaEsc(s){return String(s==null?'':s).replace(/\\/g,'\\\\').replace(/"/g,'\\"')}
 function splitTitleArtist(name){name=String(name||'').trim();let title=name,artist=null;const par=/\s*[\(\[][^\)\]]*[\)\]]\s*$/;
- if(name.indexOf('|')>=0){const left=name.split('|')[0];const di=left.indexOf(' - ');if(di>=0){title=left.slice(0,di).trim();artist=left.slice(di+3).trim()}else{title=left.trim()}}
- else{const m=name.match(/^(.*?)\s+-\s+(.*?)\s*[\(\[][^\)\]]*[\)\]]\s*$/);if(m){artist=m[1].trim();title=m[2].trim()}else{const di=name.indexOf(' - ');if(di>=0){title=name.slice(0,di).trim();artist=name.slice(di+3).trim()}}}
+ if(name.indexOf('|')>=0){const left=name.split('|')[0];const di=left.indexOf(' - ');if(di>=0){artist=left.slice(0,di).trim();title=left.slice(di+3).trim()}else{title=left.trim()}}
+ else{const m=name.match(/^(.*?)\s+-\s+(.*?)\s*[\(\[][^\)\]]*[\)\]]\s*$/);if(m){artist=m[1].trim();title=m[2].trim()}else{const di=name.indexOf(' - ');if(di>=0){artist=name.slice(0,di).trim();title=name.slice(di+3).trim()}}}
  title=title.replace(par,'').trim();if(artist){artist=artist.replace(par,'').trim();if(!artist)artist=null}return{title:title||name,artist:artist}}
-function genScript(x){const c=rbxCfg();let t=c.tpl||DEFAULT_TPL;const sa=splitTitleArtist(x.name);
+function genScript(x){const c=rbxCfg();let t=c.tpl||DEFAULT_TPL;const auto=splitTitleArtist(x.name||'');const sa={title:(x.title||'')!==''?x.title:auto.title,artist:x.artist!=null?x.artist:auto.artist};
  t=t.replace(/(\bid\s*=\s*").*?(")/,'$1rbxassetid://'+x.aid+'$2');
  t=t.replace(/(\btitle\s*=\s*").*?(")/i,'$1'+luaEsc(sa.title||'judul lagu')+'$2');
  if(sa.artist)t=t.replace(/(\bartist\s*=\s*").*?(")/i,'$1'+luaEsc(sa.artist)+'$2');
@@ -759,6 +759,8 @@ function genScript(x){const c=rbxCfg();let t=c.tpl||DEFAULT_TPL;const sa=splitTi
  t=t.replace(/^([ \t]*SoundId\s*=\s*").*(")/m,'$1rbxassetid://'+x.aid+'$2');
  if(x.dur)t=t.replace(/^([ \t]*Duration\s*=\s*)\d+(.*)$/m,'$1'+x.dur+'$2');
  const comp=+((1/(+x.spd||1))).toFixed(3);t=t.replace(/(\bspeed\s*=\s*)[\d.]+/,($m,$p)=>$p+comp);
+ if(x.genre!=null&&String(x.genre).trim()!=='')t=t.replace(/(\bgenre\s*=\s*").*?(")/i,'$1'+luaEsc(String(x.genre).trim())+'$2');
+ if(x.origDur!=null&&isFinite(+x.origDur))t=t.replace(/(\bdur\s*=\s*)[\d.]+/,($m,$p)=>$p+Math.round(+x.origDur));
  return t}
 const bRb=document.createElement('button');bRb.className='tbtn';bRb.style.padding='.3rem .55rem';bRb.textContent='SALIN RBX';bRb.onclick=()=>copyTxt('rbxassetid://'+x.aid);const bSc=document.createElement('button');bSc.className='tbtn';bSc.style.padding='.3rem .55rem';bSc.textContent='SALIN SCRIPT';bSc.onclick=()=>copyTxt(genScript(x));d.appendChild(b);d.appendChild(s);d.appendChild(bId);d.appendChild(bNm);d.appendChild(bRb);d.appendChild(bSc);box.appendChild(d)})}
 /* ---------- export ---------- */
@@ -874,10 +876,10 @@ $('stWipe').onclick=()=>askConfirm('Yakin hapus SEMUA riwayat upload (termasuk a
 function rbxHistAdd(e){const h=rbxHistGet();h.unshift(e);rbxHistSave(h)}
 function renderHist(){renderStudioHist();const box=$('rbxHist');if(!box)return;const h=rbxHistGet();box.innerHTML=h.length?'':'<div class="empty">Belum ada upload.</div>';h.forEach(x=>{const d=document.createElement('div');d.className='histrow';const b=document.createElement('b');b.textContent=x.name+' • '+x.aid;const s=document.createElement('span');s.textContent=(function(){const _mi=modInfo(x.mod);s.className=_mi.c;return _mi.t+(x.share?' • '+x.share:'')})();const bId=document.createElement('button');bId.className='tbtn';bId.style.padding='.3rem .55rem';bId.textContent='SALIN ID';bId.onclick=()=>copyTxt(String(x.aid));const bNm=document.createElement('button');bNm.className='tbtn';bNm.style.padding='.3rem .55rem';bNm.textContent='SALIN NAMA';bNm.onclick=()=>copyTxt(x.name||'');function luaEsc(s){return String(s==null?'':s).replace(/\\/g,'\\\\').replace(/"/g,'\\"')}
 function splitTitleArtist(name){name=String(name||'').trim();let title=name,artist=null;const par=/\s*[\(\[][^\)\]]*[\)\]]\s*$/;
- if(name.indexOf('|')>=0){const left=name.split('|')[0];const di=left.indexOf(' - ');if(di>=0){title=left.slice(0,di).trim();artist=left.slice(di+3).trim()}else{title=left.trim()}}
- else{const m=name.match(/^(.*?)\s+-\s+(.*?)\s*[\(\[][^\)\]]*[\)\]]\s*$/);if(m){artist=m[1].trim();title=m[2].trim()}else{const di=name.indexOf(' - ');if(di>=0){title=name.slice(0,di).trim();artist=name.slice(di+3).trim()}}}
+ if(name.indexOf('|')>=0){const left=name.split('|')[0];const di=left.indexOf(' - ');if(di>=0){artist=left.slice(0,di).trim();title=left.slice(di+3).trim()}else{title=left.trim()}}
+ else{const m=name.match(/^(.*?)\s+-\s+(.*?)\s*[\(\[][^\)\]]*[\)\]]\s*$/);if(m){artist=m[1].trim();title=m[2].trim()}else{const di=name.indexOf(' - ');if(di>=0){artist=name.slice(0,di).trim();title=name.slice(di+3).trim()}}}
  title=title.replace(par,'').trim();if(artist){artist=artist.replace(par,'').trim();if(!artist)artist=null}return{title:title||name,artist:artist}}
-function genScript(x){const c=rbxCfg();let t=c.tpl||DEFAULT_TPL;const sa=splitTitleArtist(x.name);
+function genScript(x){const c=rbxCfg();let t=c.tpl||DEFAULT_TPL;const auto=splitTitleArtist(x.name||'');const sa={title:(x.title||'')!==''?x.title:auto.title,artist:x.artist!=null?x.artist:auto.artist};
  t=t.replace(/(\bid\s*=\s*").*?(")/,'$1rbxassetid://'+x.aid+'$2');
  t=t.replace(/(\btitle\s*=\s*").*?(")/i,'$1'+luaEsc(sa.title||'judul lagu')+'$2');
  if(sa.artist)t=t.replace(/(\bartist\s*=\s*").*?(")/i,'$1'+luaEsc(sa.artist)+'$2');
@@ -886,11 +888,15 @@ function genScript(x){const c=rbxCfg();let t=c.tpl||DEFAULT_TPL;const sa=splitTi
  t=t.replace(/^([ \t]*SoundId\s*=\s*").*(")/m,'$1rbxassetid://'+x.aid+'$2');
  if(x.dur)t=t.replace(/^([ \t]*Duration\s*=\s*)\d+(.*)$/m,'$1'+x.dur+'$2');
  const comp=+((1/(+x.spd||1))).toFixed(3);t=t.replace(/(\bspeed\s*=\s*)[\d.]+/,($m,$p)=>$p+comp);
+ if(x.genre!=null&&String(x.genre).trim()!=='')t=t.replace(/(\bgenre\s*=\s*").*?(")/i,'$1'+luaEsc(String(x.genre).trim())+'$2');
+ if(x.origDur!=null&&isFinite(+x.origDur))t=t.replace(/(\bdur\s*=\s*)[\d.]+/,($m,$p)=>$p+Math.round(+x.origDur));
  return t}
 const bRb=document.createElement('button');bRb.className='tbtn';bRb.style.padding='.3rem .55rem';bRb.textContent='SALIN RBX';bRb.onclick=()=>copyTxt('rbxassetid://'+x.aid);const bSc=document.createElement('button');bSc.className='tbtn';bSc.style.padding='.3rem .55rem';bSc.textContent='SALIN SCRIPT';bSc.onclick=()=>copyTxt(genScript(x));d.appendChild(b);d.appendChild(s);d.appendChild(bId);d.appendChild(bNm);d.appendChild(bRb);d.appendChild(bSc);box.appendChild(d)})}
 async function copyTxt(t){try{await navigator.clipboard.writeText(t);toast('Disalin: '+t)}catch(e){const ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');toast('Disalin.')}catch(_){toast('Gagal salin otomatis.')}ta.remove()}}
 function modInfo(st){st=String(st==null?'?':st);if(/APPROVED/i.test(st))return{t:'LOLOS MODERASI',c:'mod-ok'};if(/REJECT/i.test(st))return{t:'DITOLAK MODERASI',c:'mod-no'};return{t:'DITINJAU',c:'mod-wait'}}
-function showResult(name,aid,mod,spd){try{const sc=genScript({name,aid,spd});window._lastScript=sc;const esc=sc.replace(/&/g,'&amp;').replace(/</g,'&lt;');const comp=+((1/(+spd||1))).toFixed(3);rbxStat('✅ Upload beres! ID: <b style="color:#fff">rbxassetid://'+aid+'</b><br/><div class="res-id">rbxassetid://'+aid+'</div><pre style="white-space:pre-wrap;word-break:break-all;background:rgba(0,0,0,.4);border:1px solid var(--line);border-radius:10px;padding:.6rem;font-size:.75rem">'+esc+'</pre><button class="tbtn" onclick="copyTxt(window._lastScript)">SALIN SCRIPT</button> <span class="mini-note">id + title + artist + speed (kompensasi '+comp+'x dari '+((+spd||1).toFixed(2))+'x) terisi otomatis.</span>')}catch(e){}}
+function guessGenre(name){const s=String(name||'').toLowerCase();const list=['amapiano','afrobeats','lo-fi','lofi','hip-hop','hip hop','dance-pop','edm','phonk','drill','house','techno','dubstep','dangdut','koplo','kpop','rnb','r&b','jazz','rock','metal','pop','rap','reggae','country','blues','indie','punk','classical','funk'];for(const g of list)if(s.includes(g))return g.split(' ').map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(' ');return ''}
+function lastGenre(v){try{if(v!=null){localStorage.setItem('np_genre',String(v));return v}return localStorage.getItem('np_genre')||''}catch(e){return v==null?'':v}}
+function showResult(name,aid,mod,spd,origDur){try{window._resSpd=spd;window._resOrigDur=origDur;const sa0=splitTitleArtist(name);const g0=guessGenre(name)||lastGenre();const esc0=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');rbxStat('✅ Upload beres! ID: <b style="color:#fff">rbxassetid://'+aid+'</b><br/><div class="res-id">rbxassetid://'+aid+'</div><div class="modal-row"><input type="text" id="resTitle" value="'+esc0(sa0.title)+'" placeholder="Title" style="flex:1;margin:0"/><input type="text" id="resArtist" value="'+esc0(sa0.artist||'')+'" placeholder="Artist" style="flex:1;margin:0"/></div><div class="modal-row"><input type="text" id="resGenre" value="'+esc0(g0)+'" placeholder="Genre (tebakan, bisa diketik)" style="flex:1;margin:0"/></div><pre id="resScript" style="white-space:pre-wrap;word-break:break-all;background:rgba(0,0,0,.4);border:1px solid var(--line);border-radius:10px;padding:.6rem;font-size:.75rem"></pre><div class="modal-row"><button class="tbtn" id="resCopy">SALIN SCRIPT</button><button class="tbtn" id="resSave">SIMPAN KE RIWAYAT</button></div> <span class="mini-note">Koreksi manual bila tebakan salah — script + riwayat ikut yang dikoreksi. Genre diingat untuk berikutnya.</span>');const paint=()=>{const sc=genScript({name,aid,spd:titleFix().spd,origDur:window._resOrigDur,title:titleFix().t,artist:titleFix().a,genre:$('resGenre').value.trim()});window._lastScript=sc;$('resScript').textContent=sc};const titleFix=()=>({t:$('resTitle').value.trim(),a:$('resArtist').value.trim(),spd:window._resSpd});$('resTitle').oninput=paint;$('resArtist').oninput=paint;$('resGenre').oninput=paint;$('resCopy').onclick=()=>copyTxt(window._lastScript);$('resSave').onclick=()=>{const f=titleFix();const g=$('resGenre').value.trim();lastGenre(g);rbxHistAdd({name,aid,ts:Date.now(),mod:mod||'?',title:f.t,artist:f.a,genre:g,spd:window._resSpd,origDur:window._resOrigDur});renderHist();toast('Koreksi tersimpan ke riwayat.')};paint()}catch(e){}}
 function histShare(aid,txt){const h=rbxHistGet();const it=h.find(x=>String(x.aid)===String(aid));if(it){it.share=txt;rbxHistSave(h)}}
 function grantQ(){return lsGet('np_rbx_grants',[])}
 function grantQSave(q){lsSet('np_rbx_grants',q.slice(0,20))}
@@ -914,7 +920,7 @@ function renderRbxAcc(){const c=rbxCfg();const ok=c.key&&/^\d+$/.test(c.id||'');
  $('rbxAcc').innerHTML=ok?('Akun: <b style="color:#fff">'+(c.who==='groupId'?'Group ':'User ')+c.id+'</b> • key ••'+String(c.key).slice(-4)+' <button class="tbtn" id="rbxGoAcc" style="margin-left:.5rem;padding:.35rem .7rem">UBAH</button>')
  :('⚠️ Akun Roblox belum diatur. <button class="tbtn" id="rbxGoAcc" style="margin-left:.5rem;padding:.35rem .7rem">BUKA AKUN INFO</button>');
  $('rbxGoAcc').onclick=()=>{$('rbxModal').classList.remove('open');openAcc()}}
-const DEFAULT_TPL='{ id = "rbxassetid://........", image = "rbxassetid://........", title = ".....", genre = ".....", artist = ".....", speed = 1, icon = "rbxassetid://........" },';
+const DEFAULT_TPL='{ id = "rbxassetid://........", image = "rbxassetid://........", title = ".....", genre = ".....", artist = ".....", speed = 1, dur = 0, icon = "rbxassetid://........" },';
 function openAcc(){const c=rbxCfg();$('accKey').value=c.key||'';$('accKey').type='password';$('accShow').textContent='👁';if(c.who)$('accWho').value=c.who;$('accId').value=c.id||'';$('accMe').value=c.me||'';$('accApi').value=c.api||'';$('accTpl').value=c.tpl||DEFAULT_TPL;$('accErr').style.display='none';renderAccStat();$('accModal').classList.add('open')}
 function renderAccStat(){const c=rbxCfg();const s=$('accStat');s.style.display='block';
  s.innerHTML=(c.key?'✅ API key tersimpan (••••'+String(c.key).slice(-4)+')':'⚠️ API key belum ada')+'<br/>'+(c.id?('Kreator: '+((c.who==='groupId'?'Group ':'User '))+c.id):'Kreator belum diisi')+(c.me?('<br/>User ID saya: '+c.me):'')}
@@ -947,6 +953,8 @@ $('rbxGo').onclick=async()=>{const c0=rbxCfg(),key=(c0.key||'').trim(),who=c0.wh
  if(!key||!/^\d+$/.test(id)){rbxShowErr('Akun belum lengkap — atur dulu di Akun Info.');$('rbxModal').classList.remove('open');openAcc();return}
   if(!clips.length)return rbxShowErr('Timeline masih kosong — tambah audio dulu.');
   const mixSpd=clips.length?(clips.every(c=>Math.abs(c.speed-clips[0].speed)<1e-9)?clips[0].speed:(((clips.find(c=>c.id===sel)||{}).speed)||1)):1;
+  const mixSrc=(clips.every(c=>Math.abs(c.speed-clips[0].speed)<1e-9)?clips[0]:(clips.find(c=>c.id===sel)||clips[0]));
+  const mixOrigDur=mixSrc&&buffers[mixSrc.id]?Math.round(buffers[mixSrc.id].duration):0;
    rbxSave({...c0,desc,shareType:$('rbxShareType').value,shareId:$('rbxShareId').value.trim()});$('rbxGo').disabled=true;rbxViaProxy=false;
   try{
   try{const qc=await fetch(apiUrl('/key/check?key='+encodeURIComponent(getLic())));const qj=await qc.json();if(!qj.ok&&qj.freeRemaining<=0)throw new Error('NEEDKEY')}catch(e){if(e&&e.message==='NEEDKEY')throw e}
@@ -975,8 +983,8 @@ $('rbxGo').onclick=async()=>{const c0=rbxCfg(),key=(c0.key||'').trim(),who=c0.wh
   const aid=done.response&&done.response.assetId;
   const modState=done.response&&done.response.moderationResult&&done.response.moderationResult.moderationState;
     rbxHistSave(rbxHistGet().filter(x=>x.op!==opId));
-  rbxHistAdd({name,aid,ts:Date.now(),mod:modState||'?',dur:Math.round(dur||0),spd:mixSpd});
-  showResult(name,aid,modState,mixSpd);
+  rbxHistAdd({name,aid,ts:Date.now(),mod:modState||'?',dur:Math.round(dur||0),spd:mixSpd,origDur:mixOrigDur});
+  showResult(name,aid,modState,mixSpd,mixOrigDur);
   renderHist();
   const shT=$('rbxShareType').value,shI=$('rbxShareId').value.trim();
   if(shT!=='none'&&/^\d+$/.test(shI)){
