@@ -387,7 +387,7 @@ input[type=range]::-webkit-slider-thumb{box-shadow:0 0 10px var(--pk)}
   <div class="listhead"><span>HASIL & RIWAYAT UPLOAD</span><span style="display:flex;gap:.5rem;align-items:center"><b id="stMod">—</b><button class="tbtn" id="stRefresh" style="padding:.3rem .6rem" title="Cek ulang status moderasi semua"><i class="fa-solid fa-rotate"></i> SEGARKAN</button><button class="tbtn" id="stWipe" style="padding:.3rem .6rem" title="Hapus semua riwayat"><i class="fa-solid fa-trash"></i> HAPUS</button></span></div>
   <div id="stHist" style="margin-top:10px"></div>
 </div>
-<footer class="lp-wrap lp-foot">© 2026 NewPixel Audio Editor • 100% lokal di browser • Hanya untuk audio milikmu / bebas lisensi</footer>
+<footer class="lp-wrap lp-foot">© 2026 NewPixel Audio Editor • 100% lokal di browser • Hanya untuk audio milikmu / bebas lisensi • <span id="npVer">v26</span></footer>
 <div class="playerbar">
   <div class="pb-left">
     <img src="assets/logo.jpeg" alt="NP"/>
@@ -522,7 +522,7 @@ input[type=range]::-webkit-slider-thumb{box-shadow:0 0 10px var(--pk)}
   </div>
 </div></div>
 <div class="toast" id="toast"></div>
-<script>window.NP_API_BASE='https://api.newpixel.my.id';</script>
+<script>window.NP_API_BASE='https://api.newpixel.my.id';window.NP_VER='v26';</script>
 <script>
 const $=id=>document.getElementById(id);
 const fmt=s=>{s=Math.max(0,s);const m=s/60|0,x=(s%60)|0;return String(m).padStart(2,'0')+':'+String(x).padStart(2,'0')};
@@ -930,7 +930,7 @@ async function proxyPing(){try{const c=new AbortController();const t=setTimeout(
 async function blobToB64(blob){return new Promise((res,rej)=>{const fr=new FileReader();fr.onload=()=>res(String(fr.result).split(',')[1]);fr.onerror=rej;fr.readAsDataURL(blob)})}
 let rbxViaProxy=false;
 async function uploadDirect(blob,meta,fn,key){const fd=new FormData();fd.append('request',JSON.stringify(meta));fd.append('fileContent',blob,fn);let res;try{res=await fetch('https://apis.roblox.com/assets/v1/assets',{method:'POST',headers:{'x-api-key':key},body:fd})}catch(e){throw new Error('CORS')}if(!res.ok){let t='';try{t=await res.text()}catch(e){}throw new Error('HTTP '+res.status+' '+t.slice(0,180))}const op=await res.json();return (op.path||'').split('/').pop()}
-async function uploadProxy(blob,meta,fn,key){rbxViaProxy=true;const b64=await blobToB64(blob);let r;try{r=await fetch(apiUrl('/upload'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key,request:JSON.stringify(meta),filename:fn,mime:'audio/mpeg',audioBase64:b64,lic:getLic()})})}catch(e){throw new Error('PROXY_DOWN')}const j=await r.json();if(j.error==='NEED_KEY')throw new Error('NEEDKEY');if(j.status<200||j.status>=300)throw new Error('HTTP '+j.status+' '+(j.body||'').slice(0,180));let op=null;try{op=JSON.parse(j.body)}catch(e){throw new Error('OP')}return (op.path||'').split('/').pop()}
+async function uploadProxy(blob,meta,fn,key){rbxViaProxy=true;const b64=await blobToB64(blob);const body=JSON.stringify({key,request:JSON.stringify(meta),filename:fn,mime:'audio/mpeg',audioBase64:b64,lic:getLic()});const j=await new Promise((res,rej)=>{const x=new XMLHttpRequest();x.open('POST',apiUrl('/upload'));x.setRequestHeader('Content-Type','application/json');x.upload.onprogress=e=>{if(e.lengthComputable)rbxStat('Mengupload via server… '+Math.round(e.loaded/e.total*100)+'%')};x.onload=()=>{try{res(JSON.parse(x.responseText))}catch(e){rej(new Error('HTTP '+x.status))}};x.onerror=()=>rej(new Error('PROXY_DOWN'));x.send(body)});if(j.error==='NEED_KEY')throw new Error('NEEDKEY');if(j.status<200||j.status>=300)throw new Error('HTTP '+j.status+' '+(j.body||'').slice(0,180));let op=null;try{op=JSON.parse(j.body)}catch(e){throw new Error('OP')}return (op.path||'').split('/').pop()}
 async function statusCheck(opId,key){if(rbxViaProxy){const s=await fetch(apiUrl('/status'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key,op:opId})});const j=await s.json();if(j.status!==200)throw new Error('HTTP '+j.status+' saat cek status.');return JSON.parse(j.body)}let st;try{st=await fetch('https://apis.roblox.com/assets/v1/operations/'+opId,{headers:{'x-api-key':key}})}catch(e){throw new Error('CORS')}if(!st.ok)throw new Error('HTTP '+st.status+' saat cek status.');return await st.json()}
 $('rbxGo').onclick=async()=>{const c0=rbxCfg(),key=(c0.key||'').trim(),who=c0.who||'userId',id=String(c0.id||'').trim(),name=($('rbxName').value.trim()||'newpixel_mix').slice(0,50),desc=($('rbxDesc').value.trim()||'Dibuat dengan NewPixel Audio Editor').slice(0,200);
  $('rbxErr').style.display='none';
@@ -948,7 +948,7 @@ $('rbxGo').onclick=async()=>{const c0=rbxCfg(),key=(c0.key||'').trim(),who=c0.wh
   const fn=name.replace(/[^\w\-]+/g,'_')+'.mp3';
   let opId=null;
   try{opId=await uploadDirect(blob,meta,fn,key)}
-  catch(e){if(e&&e.message==='CORS'){rbxStat('Browser diblokir Roblox (CORS). Upload via server…');
+  catch(e){if(e&&e.message==='CORS'){rbxStat('Mengupload via server… 0%');
     try{opId=await uploadProxy(blob,meta,fn,key)}
     catch(e2){if(e2&&e2.message==='NEEDKEY')throw e2;if(e2&&e2.message==='PROXY_DOWN'){if(await proxyPing())throw e2;throw new Error('NO_PROXY')}throw e2}}else throw e}
   if(!opId)throw new Error('OP');
@@ -984,7 +984,7 @@ $('rbxGo').onclick=async()=>{const c0=rbxCfg(),key=(c0.key||'').trim(),who=c0.wh
   else if(m==='NO_LAME')rbxShowErr('Library MP3 (lamejs CDN) gagal dimuat — butuh internet sekali saat buka halaman. Refresh lalu ulangi.');
   else if(m==='NO_PROXY')rbxShowErr('Butuh koneksi server: pastikan backend online (https://api.newpixel.my.id) terjangkau.');
   else if(m==='NEEDKEY'){rbxShowErr('Jatah gratis habis (10x/hari). Masukkan kode lisensi (20rb=50x) di kolom lisensi untuk lanjut upload.');openQuota();}
-  else if(m==='PROXY_DOWN')rbxShowErr('Proxy tidak merespons. Pastikan roblox-proxy.bat sedang jalan (window hitam terbuka, tulisan proxy jalan).');
+  else if(m==='PROXY_DOWN')rbxShowErr('Server tidak merespons. Cek https://api.newpixel.my.id/ping + kuota. Coba lagi 1 menit.');
   else if(m==='CORS')rbxShowErr('Browser diblokir Roblox (CORS) dan proxy tak aktif. Jalankan roblox-proxy.bat lalu ulangi — atau fallback WAV BACKUP + upload manual.');
   else if(m==='TIMEOUT')rbxShowErr('Moderasi lebih dari 5 menit — cek manual di Creator Dashboard → Creations → Audio.');
   else if(m.startsWith('HTTP 400'))rbxShowErr('Roblox menolak (400). Penyebab umum: API key salah/tanpa scope asset:write, ID kreator salah, atau file tidak valid. Detail: '+m.slice(0,220));
