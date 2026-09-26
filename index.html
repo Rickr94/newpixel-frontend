@@ -289,7 +289,7 @@ input[type=range]::-webkit-slider-thumb{box-shadow:0 0 10px var(--pk)}
     <div class="lp-card"><i class="fa-solid fa-wave-square"></i><h3>Multitrack Timeline</h3><p>Geser, trim, cut, dan susun banyak clip dalam satu timeline visual dengan waveform real-time.</p></div>
     <div class="lp-card"><i class="fa-brands fa-youtube"></i><h3>YouTube Import</h3><p>Tempel link YouTube, audio langsung masuk timeline sebagai clip siap edit. Tanpa download manual.</p></div>
     <div class="lp-card"><i class="fa-solid fa-sliders"></i><h3>10 Effect Presets</h3><p>Bass Boost, Vocal Clear, Lo-Fi, Robot, Echo Room, dan lainnya — satu klik langsung jadi.</p></div>
-    <div class="lp-card"><i class="fa-solid fa-file-code"></i><h3>Script Generator</h3><p>Template sekali simpan di Akun Info — Title, Artist, SoundId, dan Duration terisi otomatis. Satu klik salin ke music player.</p></div>
+    <div class="lp-card"><i class="fa-solid fa-file-code"></i><h3>Script Generator</h3><p>Template bebas milikmu — id, title, dan artist terisi otomatis. Satu klik salin ke music player.</p></div>
     <div class="lp-card"><i class="fa-solid fa-file-export"></i><h3>Export Asli</h3><p>WAV presisi, MP3 192kbps, OGG Vorbis — file beneran, siap pakai di mana pun.</p></div>
     <div class="lp-card"><i class="fa-solid fa-cloud-arrow-up"></i><h3>Roblox Upload</h3><p>Kirim mix langsung ke Creator Dashboard + bagi akses teman/grup/game otomatis.</p></div>
   </div>
@@ -468,7 +468,7 @@ input[type=range]::-webkit-slider-thumb{box-shadow:0 0 10px var(--pk)}
   <div class="modal-row" style="margin-top:0">
     <textarea id="accTpl" rows="9" spellcheck="false" style="width:100%;background:rgba(12,12,12,.85);border:1px solid var(--line);color:#fff;border-radius:10px;padding:.6rem .8rem;font-family:Consolas,monospace;font-size:.76rem;outline:none;resize:vertical"></textarea>
   </div>
-  <p class="mini-note">Baris Title, SoundId, dan Duration terisi otomatis dari file yang diupload. Baris lain (Artist, Album, Genre, CoverColor) mengikuti template ini.</p>
+  <p class="mini-note">Baris id, title, artist, dan speed terisi otomatis (speed = kompensasi 1/speed clip biar terdengar normal di Roblox). Baris lain (image, genre, icon) mengikuti template ini.</p>
   <div class="flow" id="accStat" style="display:none"></div>
   <div class="errbox" id="accErr"></div>
   <p class="mini-note">Cara dapat key: create.roblox.com → API Keys → scope asset:read + asset:write (+ asset-permissions:write bila mau auto bagi-akses), tanpa batasan IP. User ID = angka di URL profilmu.</p>
@@ -749,10 +749,14 @@ function splitTitleArtist(name){name=String(name||'').trim();let title=name,arti
  else{const m=name.match(/^(.*?)\s+-\s+(.*?)\s*[\(\[][^\)\]]*[\)\]]\s*$/);if(m){artist=m[1].trim();title=m[2].trim()}else{const di=name.indexOf(' - ');if(di>=0){title=name.slice(0,di).trim();artist=name.slice(di+3).trim()}}}
  title=title.replace(par,'').trim();if(artist){artist=artist.replace(par,'').trim();if(!artist)artist=null}return{title:title||name,artist:artist}}
 function genScript(x){const c=rbxCfg();let t=c.tpl||DEFAULT_TPL;const sa=splitTitleArtist(x.name);
+ t=t.replace(/(\bid\s*=\s*").*?(")/,'$1rbxassetid://'+x.aid+'$2');
+ t=t.replace(/(\btitle\s*=\s*").*?(")/i,'$1'+luaEsc(sa.title||'judul lagu')+'$2');
+ if(sa.artist)t=t.replace(/(\bartist\s*=\s*").*?(")/i,'$1'+luaEsc(sa.artist)+'$2');
  t=t.replace(/^([ \t]*Title\s*=\s*").*(")/m,'$1'+luaEsc(sa.title||'judul lagu')+'$2');
  if(sa.artist)t=t.replace(/^([ \t]*Artist\s*=\s*").*(")/m,'$1'+luaEsc(sa.artist)+'$2');
  t=t.replace(/^([ \t]*SoundId\s*=\s*").*(")/m,'$1rbxassetid://'+x.aid+'$2');
  if(x.dur)t=t.replace(/^([ \t]*Duration\s*=\s*)\d+(.*)$/m,'$1'+x.dur+'$2');
+ const comp=+((1/(+x.spd||1))).toFixed(3);t=t.replace(/(\bspeed\s*=\s*)[\d.]+/,($m,$p)=>$p+comp);
  return t}
 const bRb=document.createElement('button');bRb.className='tbtn';bRb.style.padding='.3rem .55rem';bRb.textContent='SALIN RBX';bRb.onclick=()=>copyTxt('rbxassetid://'+x.aid);const bSc=document.createElement('button');bSc.className='tbtn';bSc.style.padding='.3rem .55rem';bSc.textContent='SALIN SCRIPT';bSc.onclick=()=>copyTxt(genScript(x));d.appendChild(b);d.appendChild(s);d.appendChild(bId);d.appendChild(bNm);d.appendChild(bRb);d.appendChild(bSc);box.appendChild(d)})}
 /* ---------- export ---------- */
@@ -872,15 +876,19 @@ function splitTitleArtist(name){name=String(name||'').trim();let title=name,arti
  else{const m=name.match(/^(.*?)\s+-\s+(.*?)\s*[\(\[][^\)\]]*[\)\]]\s*$/);if(m){artist=m[1].trim();title=m[2].trim()}else{const di=name.indexOf(' - ');if(di>=0){title=name.slice(0,di).trim();artist=name.slice(di+3).trim()}}}
  title=title.replace(par,'').trim();if(artist){artist=artist.replace(par,'').trim();if(!artist)artist=null}return{title:title||name,artist:artist}}
 function genScript(x){const c=rbxCfg();let t=c.tpl||DEFAULT_TPL;const sa=splitTitleArtist(x.name);
+ t=t.replace(/(\bid\s*=\s*").*?(")/,'$1rbxassetid://'+x.aid+'$2');
+ t=t.replace(/(\btitle\s*=\s*").*?(")/i,'$1'+luaEsc(sa.title||'judul lagu')+'$2');
+ if(sa.artist)t=t.replace(/(\bartist\s*=\s*").*?(")/i,'$1'+luaEsc(sa.artist)+'$2');
  t=t.replace(/^([ \t]*Title\s*=\s*").*(")/m,'$1'+luaEsc(sa.title||'judul lagu')+'$2');
  if(sa.artist)t=t.replace(/^([ \t]*Artist\s*=\s*").*(")/m,'$1'+luaEsc(sa.artist)+'$2');
  t=t.replace(/^([ \t]*SoundId\s*=\s*").*(")/m,'$1rbxassetid://'+x.aid+'$2');
  if(x.dur)t=t.replace(/^([ \t]*Duration\s*=\s*)\d+(.*)$/m,'$1'+x.dur+'$2');
+ const comp=+((1/(+x.spd||1))).toFixed(3);t=t.replace(/(\bspeed\s*=\s*)[\d.]+/,($m,$p)=>$p+comp);
  return t}
 const bRb=document.createElement('button');bRb.className='tbtn';bRb.style.padding='.3rem .55rem';bRb.textContent='SALIN RBX';bRb.onclick=()=>copyTxt('rbxassetid://'+x.aid);const bSc=document.createElement('button');bSc.className='tbtn';bSc.style.padding='.3rem .55rem';bSc.textContent='SALIN SCRIPT';bSc.onclick=()=>copyTxt(genScript(x));d.appendChild(b);d.appendChild(s);d.appendChild(bId);d.appendChild(bNm);d.appendChild(bRb);d.appendChild(bSc);box.appendChild(d)})}
 async function copyTxt(t){try{await navigator.clipboard.writeText(t);toast('Disalin: '+t)}catch(e){const ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');toast('Disalin.')}catch(_){toast('Gagal salin otomatis.')}ta.remove()}}
 function modInfo(st){st=String(st==null?'?':st);if(/APPROVED/i.test(st))return{t:'LOLOS MODERASI',c:'mod-ok'};if(/REJECT/i.test(st))return{t:'DITOLAK MODERASI',c:'mod-no'};return{t:'DITINJAU',c:'mod-wait'}}
-function showResult(name,aid,mod){return}
+function showResult(name,aid,mod,spd){try{const sc=genScript({name,aid,spd});window._lastScript=sc;const esc=sc.replace(/&/g,'&amp;').replace(/</g,'&lt;');const comp=+((1/(+spd||1))).toFixed(3);rbxStat('✅ Upload beres! ID: <b style="color:#fff">rbxassetid://'+aid+'</b><br/><div class="res-id">rbxassetid://'+aid+'</div><pre style="white-space:pre-wrap;word-break:break-all;background:rgba(0,0,0,.4);border:1px solid var(--line);border-radius:10px;padding:.6rem;font-size:.75rem">'+esc+'</pre><button class="tbtn" onclick="copyTxt(window._lastScript)">SALIN SCRIPT</button> <span class="mini-note">id + title + artist + speed (kompensasi '+comp+'x dari '+((+spd||1).toFixed(2))+'x) terisi otomatis.</span>')}catch(e){}}
 function histShare(aid,txt){const h=rbxHistGet();const it=h.find(x=>String(x.aid)===String(aid));if(it){it.share=txt;rbxHistSave(h)}}
 function grantQ(){return lsGet('np_rbx_grants',[])}
 function grantQSave(q){lsSet('np_rbx_grants',q.slice(0,20))}
@@ -904,7 +912,7 @@ function renderRbxAcc(){const c=rbxCfg();const ok=c.key&&/^\d+$/.test(c.id||'');
  $('rbxAcc').innerHTML=ok?('Akun: <b style="color:#fff">'+(c.who==='groupId'?'Group ':'User ')+c.id+'</b> • key ••'+String(c.key).slice(-4)+' <button class="tbtn" id="rbxGoAcc" style="margin-left:.5rem;padding:.35rem .7rem">UBAH</button>')
  :('⚠️ Akun Roblox belum diatur. <button class="tbtn" id="rbxGoAcc" style="margin-left:.5rem;padding:.35rem .7rem">BUKA AKUN INFO</button>');
  $('rbxGoAcc').onclick=()=>{$('rbxModal').classList.remove('open');openAcc()}}
-const DEFAULT_TPL='\t\tTitle = "judul lagu",\n\t\tArtist = "penyanyi",\n\t\tSoundId = "rbxassetid://.......",\n\t\tDuration = 150,\n\t\tAlbum = "",\n\t\tGenre = "",\n\t\tCoverColor = Color3.fromRGB(0, 255, 255),\n\t},';
+const DEFAULT_TPL='{ id = "rbxassetid://........", image = "rbxassetid://........", title = ".....", genre = ".....", artist = ".....", speed = 1, icon = "rbxassetid://........" },';
 function openAcc(){const c=rbxCfg();$('accKey').value=c.key||'';$('accKey').type='password';$('accShow').textContent='👁';if(c.who)$('accWho').value=c.who;$('accId').value=c.id||'';$('accMe').value=c.me||'';$('accApi').value=c.api||'';$('accTpl').value=c.tpl||DEFAULT_TPL;$('accErr').style.display='none';renderAccStat();$('accModal').classList.add('open')}
 function renderAccStat(){const c=rbxCfg();const s=$('accStat');s.style.display='block';
  s.innerHTML=(c.key?'✅ API key tersimpan (••••'+String(c.key).slice(-4)+')':'⚠️ API key belum ada')+'<br/>'+(c.id?('Kreator: '+((c.who==='groupId'?'Group ':'User '))+c.id):'Kreator belum diisi')+(c.me?('<br/>User ID saya: '+c.me):'')}
@@ -935,8 +943,9 @@ async function statusCheck(opId,key){if(rbxViaProxy){const s=await fetch(apiUrl(
 $('rbxGo').onclick=async()=>{const c0=rbxCfg(),key=(c0.key||'').trim(),who=c0.who||'userId',id=String(c0.id||'').trim(),name=($('rbxName').value.trim()||'newpixel_mix').slice(0,50),desc=($('rbxDesc').value.trim()||'Dibuat dengan NewPixel Audio Editor').slice(0,200);
  $('rbxErr').style.display='none';
  if(!key||!/^\d+$/.test(id)){rbxShowErr('Akun belum lengkap — atur dulu di Akun Info.');$('rbxModal').classList.remove('open');openAcc();return}
- if(!clips.length)return rbxShowErr('Timeline masih kosong — tambah audio dulu.');
-  rbxSave({...c0,desc,shareType:$('rbxShareType').value,shareId:$('rbxShareId').value.trim()});$('rbxGo').disabled=true;rbxViaProxy=false;
+  if(!clips.length)return rbxShowErr('Timeline masih kosong — tambah audio dulu.');
+  const mixSpd=clips.length?(clips.every(c=>Math.abs(c.speed-clips[0].speed)<1e-9)?clips[0].speed:(((clips.find(c=>c.id===sel)||{}).speed)||1)):1;
+   rbxSave({...c0,desc,shareType:$('rbxShareType').value,shareId:$('rbxShareId').value.trim()});$('rbxGo').disabled=true;rbxViaProxy=false;
   try{
   try{const qc=await fetch(apiUrl('/key/check?key='+encodeURIComponent(getLic())));const qj=await qc.json();if(!qj.ok&&qj.freeRemaining<=0)throw new Error('NEEDKEY')}catch(e){if(e&&e.message==='NEEDKEY')throw e}
   rbxStat('1/3 — Merender mix…');const rb=await mixdown();if(!rb)throw new Error('RENDER');
@@ -964,8 +973,8 @@ $('rbxGo').onclick=async()=>{const c0=rbxCfg(),key=(c0.key||'').trim(),who=c0.wh
   const aid=done.response&&done.response.assetId;
   const modState=done.response&&done.response.moderationResult&&done.response.moderationResult.moderationState;
     rbxHistSave(rbxHistGet().filter(x=>x.op!==opId));
-  rbxHistAdd({name,aid,ts:Date.now(),mod:modState||'?',dur:Math.round(dur||0)});
-  showResult(name,aid,modState);
+  rbxHistAdd({name,aid,ts:Date.now(),mod:modState||'?',dur:Math.round(dur||0),spd:mixSpd});
+  showResult(name,aid,modState,mixSpd);
   renderHist();
   const shT=$('rbxShareType').value,shI=$('rbxShareId').value.trim();
   if(shT!=='none'&&/^\d+$/.test(shI)){
