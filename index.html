@@ -613,13 +613,14 @@ $('ytGo').onclick=async()=>{
    try{r=await fetch(ep,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:u,lic})})}catch(e){throw new Error('PROXY_DOWN')}
    let cur=null;try{cur=await r.json()}catch(e){firstErr=firstErr||'proxy menjawab non-JSON';continue}
    if(cur&&!cur.error&&cur.audioBase64){j=cur;break}
-   if(cur&&(cur.error==='NO_YTDLP'||cur.error==='BAD_URL'||cur.error==='TOOLONG'||cur.error==='TOOBIG'||cur.error==='NEED_KEY')){j=cur;break}
+   if(cur&&(cur.error==='NO_YTDLP'||cur.error==='BAD_URL'||cur.error==='TOOLONG'||cur.error==='TOOBIG'||cur.error==='NEED_KEY'||cur.error==='BUSY')){j=cur;break}
    if(!firstErr)firstErr=cur;
    if(!j)j=cur;
    continue;
   }
   if(!j)throw new Error('YTFAIL '+firstErr);
   if(j.error==='NEED_KEY')throw new Error('NEEDKEY');
+  if(j.error==='BUSY')throw new Error('BUSY');
   if(j.error==='UNSUPPORTED')throw new Error('UNSUPPORTED');
   if(j.error==='NO_YTDLP')throw new Error('NO_YTDLP');
   if(j.error==='BAD_URL')throw new Error('BADURL');
@@ -640,6 +641,7 @@ $('ytGo').onclick=async()=>{
   else if(m==='TOOLONG')ytErr('Durasi > 10 menit ditolak. Pakai klip yang lebih pendek.');
   else if(m==='BIG')ytErr('Hasil > 30 MB — pakai audio yang lebih pendek.');
   else if(m==='NEEDKEY'){ytErr('Jatah gratis hari ini habis (10x). Masukkan kode lisensi (20rb=50x) untuk lanjut — open ticket di Discord.');openQuota();}
+  else if(m==='BUSY')ytErr('Server penuh (lagi render milik orang lain). Tunggu 1-2 menit lalu AMBIL lagi — kuotamu tidak terpotong.');
   else if(m==='DECODE')ytErr('Format tak didukung browser.');
   else {ytErr('Gagal ekstrak ('+m.slice(0,160)+'). Mungkin private/dihapus/butuh login — hanya untuk konten milikmu/bebas lisensi.');ytStat('Detail teknis (kirim ini bila masih gagal):<br/><code style="word-break:break-all">'+m.replace(/</g,'&lt;')+'</code>')}}
  $('ytGo').disabled=false};
