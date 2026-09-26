@@ -927,7 +927,7 @@ $('rbxModal').addEventListener('click',e=>{if(e.target===$('rbxModal'))$('rbxMod
 function encodeMp3(buf,kbps){const sr=buf.sampleRate,n=buf.numberOfChannels;if(typeof lamejs==='undefined')throw new Error('NO_LAME');const enc=new lamejs.Mp3Encoder(n,sr,kbps||128);const L=buf.getChannelData(0),R=n>1?buf.getChannelData(1):L;const bs=1152,out=[];const f2i=(f,len)=>{const a=new Int16Array(len);for(let i=0;i<len;i++){const s=Math.max(-1,Math.min(1,f[i]));a[i]=s<0?s*32768:s*32767}return a};
  for(let i=0;i<L.length;i+=bs){const l=f2i(L.subarray(i,i+bs),Math.min(bs,L.length-i));const r=f2i(R.subarray(i,i+bs),Math.min(bs,R.length-i));const d=enc.encodeBuffer(l,r);if(d.length)out.push(d)}const end=enc.flush();if(end.length)out.push(end);return new Blob(out,{type:'audio/mpeg'})}
 function encodeOgg(buf){const sr=buf.sampleRate,n=buf.numberOfChannels;if(typeof OggVorbisEncoder==='undefined')throw new Error('NO_OGG');const enc=new OggVorbisEncoder(sr,n,0.4);const CH=[];for(let c=0;c<n;c++)CH.push(buf.getChannelData(c));const step=sr*5;for(let i=0;i<CH[0].length;i+=step){const part=CH.map(ch=>ch.subarray(i,i+step));enc.encode(part)}return enc.finish()}
-async function proxyPing(){try{const c=new AbortController();const t=setTimeout(()=>c.abort(),1500);const r=await fetch(apiUrl('/ping'),{signal:c.signal});clearTimeout(t);return r.ok}catch(e){return false}}
+async function proxyPing(){try{const c=new AbortController();const t=setTimeout(()=>c.abort(),8000);const r=await fetch(apiUrl('/ping'),{signal:c.signal});clearTimeout(t);return r.ok}catch(e){return false}}
 async function blobToB64(blob){return new Promise((res,rej)=>{const fr=new FileReader();fr.onload=()=>res(String(fr.result).split(',')[1]);fr.onerror=rej;fr.readAsDataURL(blob)})}
 let rbxViaProxy=false;
 async function uploadDirect(blob,meta,fn,key){const fd=new FormData();fd.append('request',JSON.stringify(meta));fd.append('fileContent',blob,fn);let res;try{res=await fetch('https://apis.roblox.com/assets/v1/assets',{method:'POST',headers:{'x-api-key':key},body:fd})}catch(e){throw new Error('CORS')}if(!res.ok){let t='';try{t=await res.text()}catch(e){}throw new Error('HTTP '+res.status+' '+t.slice(0,180))}const op=await res.json();return (op.path||'').split('/').pop()}
@@ -949,9 +949,9 @@ $('rbxGo').onclick=async()=>{const c0=rbxCfg(),key=(c0.key||'').trim(),who=c0.wh
   const fn=name.replace(/[^\w\-]+/g,'_')+'.mp3';
   let opId=null;
   try{opId=await uploadDirect(blob,meta,fn,key)}
-  catch(e){if(e&&e.message==='CORS'){rbxStat('Browser diblokir Roblox (CORS). Cek proxy lokal…');
-    if(await proxyPing()){rbxStat('Proxy lokal OK — upload via proxy…');opId=await uploadProxy(blob,meta,fn,key)}
-    else throw new Error('NO_PROXY')}else throw e}
+  catch(e){if(e&&e.message==='CORS'){rbxStat('Browser diblokir Roblox (CORS). Upload via server…');
+    try{opId=await uploadProxy(blob,meta,fn,key)}
+    catch(e2){if(e2&&e2.message==='NEEDKEY')throw e2;if(e2&&e2.message==='PROXY_DOWN'){if(await proxyPing())throw e2;throw new Error('NO_PROXY')}throw e2}}else throw e}
   if(!opId)throw new Error('OP');
   pendAdd({op:opId,name,ts:Date.now()});
   rbxHistAdd({name,aid:'—',mod:'MENGUPLOAD…',op:opId,ts:Date.now()});renderHist();
